@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Unified YouTube/Twitch Chat",
+  "version": "1.0.0",
+  "description": "Replaces YouTube live chat with a unified feed combining Twitch and YouTube messages.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "wss://*.twitch.tv/*"
+  ],
+  "action": {
+    "default_title": "Combine Chats"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
