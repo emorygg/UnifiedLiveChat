@@ -1,21 +1,35 @@
 {
   "manifest_version": 3,
-  "name": "Unified YouTube/Twitch Chat",
-  "version": "1.0.0",
-  "description": "Replaces YouTube live chat with a unified feed combining Twitch and YouTube messages.",
+  "name": "Unified Live Chat",
+  "version": "0.1.0",
+  "description": "Automatically replaces YouTube live chat with a unified feed combining the live chats of multiple platforms.",
   "permissions": [
     "storage",
     "activeTab",
     "scripting"
   ],
   "host_permissions": [
-    "*://*.youtube.com/*",
-    "wss://*.twitch.tv/*"
+    "*://*.youtube.com/*"
   ],
   "action": {
-    "default_title": "Combine Chats"
+    "default_title": "Unified Chat Settings",
+    "default_popup": "popup.html"
   },
   "background": {
     "service_worker": "background.js"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
 }

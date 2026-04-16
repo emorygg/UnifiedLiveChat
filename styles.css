@@ -124,6 +124,13 @@
   color: #d1b8ff;
 }
 
+.platform-kick {
+  border-left: 4px solid #53FC18;
+}
+.platform-kick .uc-author-name {
+  color: #7dff5c;
+}
+
 .uc-close-btn {
   background: transparent;
   border: none;

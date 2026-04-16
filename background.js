@@ -1,17 +1,5 @@
-chrome.action.onClicked.addListener(async (tab) => {
-  try {
-    // Inject into the MAIN page only (not allFrames).
-    // We access the chat iframe from the parent since it's same-origin.
-    await chrome.scripting.insertCSS({
-      target: { tabId: tab.id },
-      files: ['styles.css']
-    });
+// Background service worker — minimal for now.
+// The popup handles settings, content_scripts handles injection.
+// This file is kept for potential future use (e.g. badge updates, notifications).
 
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      files: ['content.js']
-    });
-  } catch (error) {
-    console.error('Failed to inject unified chat scripts:', error);
-  }
-});
+console.log('[UnifiedChat] Service worker loaded.');

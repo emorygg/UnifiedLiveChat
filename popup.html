@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unified Chat Settings</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <h1 class="popup-title">Unified Chat</h1>
+    <p class="popup-subtitle">YouTube ↔ Channel Links</p>
+
+    <div id="links-list" class="links-list">
+      <!-- Dynamically populated -->
+    </div>
+
+    <div class="add-form">
+      <div class="input-group">
+        <label for="yt-input">YouTube Channel</label>
+        <input type="text" id="yt-input" placeholder="e.g. faux" spellcheck="false">
+      </div>
+      <div class="input-group">
+        <label for="twitch-input">Twitch Channel <span class="optional">(optional)</span></label>
+        <input type="text" id="twitch-input" placeholder="e.g. faux" spellcheck="false">
+      </div>
+      <div class="input-group">
+        <label for="kick-input">Kick Channel <span class="optional">(optional)</span></label>
+        <input type="text" id="kick-input" placeholder="e.g. faux" spellcheck="false">
+      </div>
+      <button id="add-btn" class="add-btn">+ Add Link</button>
+    </div>
+
+    <div id="status-msg" class="status-msg"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
