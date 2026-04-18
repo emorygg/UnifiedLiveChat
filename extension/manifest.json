@@ -18,6 +18,9 @@
   "background": {
     "service_worker": "background.js"
   },
+  "icons": {
+    "128": "icon.png"
+  },
   "content_scripts": [
     {
       "matches": [
