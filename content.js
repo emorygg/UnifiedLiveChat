@@ -12,10 +12,13 @@
   var kickWs = null;
   var thirdPartyEmotes = {};
   var currentActivation = null;
+  var currentTwitchName = null;
+  var currentKickName = null;
   var iframeStylesInjected = false;
   var ytObserver = null;
   var rebuildObserver = null;  // watches for chat mode switches (Top chat ↔ Live chat)
   var rebuildPoll = null;      // periodic fallback to detect stale references
+  var globalMessageCounter = 1;
 
   // ==========================================
   // ENTRY POINT — SPA-aware page watcher
@@ -68,6 +71,8 @@
     // Prevent duplicate activation for the same channel
     if (currentActivation === ytChannel) return;
     currentActivation = ytChannel;
+    currentTwitchName = twitchName;
+    currentKickName = kickName;
     chatIframe = iframe;
 
     console.log('[UnifiedChat] Activating injection for ' + ytChannel +
@@ -76,9 +81,6 @@
 
     // Load third-party emotes
     if (twitchName) await loadThirdPartyEmotes(twitchName);
-
-    // Show a small status badge on the page (outside iframe)
-    injectStatusBadge(chatFrame, twitchName, kickName);
 
     // Attach to the YT chat DOM and start observing
     await attachToYouTubeChat(iframe);
@@ -102,6 +104,8 @@
     chatScroller = null;
     chatIframe = null;
     currentActivation = null;
+    currentTwitchName = null;
+    currentKickName = null;
     iframeStylesInjected = false;
   }
 
@@ -158,15 +162,32 @@
 
     console.log('[UnifiedChat] Attached to YT chat #items (scroller: ' + (chatScroller ? 'found' : 'fallback') + ').');
 
+    // Force flexbox on items container so we can enforce strict visual chronological ordering
+    itemsContainer.style.display = 'flex';
+    itemsContainer.style.flexDirection = 'column';
+
+    // Assign initial order to pre-existing native messages
+    var existingNodes = itemsContainer.children;
+    for (var i = 0; i < existingNodes.length; i++) {
+        if (existingNodes[i].nodeType === 1) {
+            existingNodes[i].style.order = globalMessageCounter++;
+        }
+    }
+
+    // Inject our settings button into the chat header
+    injectSettingsButton(iframeDoc);
+
     // Inject our styles into the iframe document
     injectIframeStyles(iframeDoc);
 
-    // Observe #items for child changes (currently a no-op, but keeps the hook)
+    // Observe #items to intercept native YT messages and assign them the next chronological order
     ytObserver = new MutationObserver(function (mutations) {
       for (var m = 0; m < mutations.length; m++) {
         for (var n = 0; n < mutations[m].addedNodes.length; n++) {
           var node = mutations[m].addedNodes[n];
-          // No-op for now — YT messages render natively; we only inject 3rd-party ones.
+          if (node.nodeType === 1) {
+            node.style.order = globalMessageCounter++;
+          }
         }
       }
     });
@@ -278,6 +299,16 @@
       '  line-height: 1.5;',
       '}',
 
+      /* Links */
+      '.uc-link {',
+      '  color: var(--yt-live-chat-primary-text-color, #e1e1e1);',
+      '  text-decoration: underline;',
+      '  word-break: break-all;',
+      '}',
+      '.uc-link:hover {',
+      '  color: var(--yt-live-chat-secondary-text-color, #fff);',
+      '}',
+
       /* Platform badge (tiny pill) */
       '.uc-inj-badge {',
       '  display: inline-block;',
@@ -322,6 +353,129 @@
   }
 
   // ==========================================
+  // INJECT SETTINGS BUTTON INTO CHAT HEADER
+  // ==========================================
+  function injectSettingsButton(iframeDoc) {
+    var headerContextMenu = iframeDoc.querySelector('#live-chat-header-context-menu');
+    if (!headerContextMenu) return;
+    
+    // Check if we already injected it
+    if (iframeDoc.getElementById('uc-settings-btn')) return;
+
+    var container = headerContextMenu.parentElement;
+
+    // ----- STATUS BADGE IN HEADER -----
+    var statusSpan = iframeDoc.createElement('div');
+    statusSpan.id = 'uc-header-status';
+    statusSpan.style.display = 'flex';
+    statusSpan.style.alignItems = 'center';
+    statusSpan.style.gap = '8px';
+    statusSpan.style.marginRight = '12px';
+    statusSpan.style.fontSize = '12px';
+    statusSpan.style.fontWeight = '500';
+    statusSpan.style.fontFamily = 'var(--yt-live-chat-font-family, "Roboto", "Arial", sans-serif)';
+    // Use the native YouTube secondary text color variable so it adapts to dark/light mode automatically
+    statusSpan.style.color = 'var(--yt-live-chat-secondary-text-color)';
+    
+    if (currentTwitchName) {
+      var t = iframeDoc.createElement('span');
+      t.textContent = '● Twitch';
+      t.style.color = '#bf94ff'; // Modern Lighter twitch purple suitable for dark/light mode
+      statusSpan.appendChild(t);
+    }
+    if (currentKickName) {
+      var k = iframeDoc.createElement('span');
+      k.textContent = '● Kick';
+      // Kick green looks decent on both, soften slightly for readability
+      k.style.color = '#5ceb2a'; 
+      statusSpan.appendChild(k);
+    }
+
+    container.insertBefore(statusSpan, headerContextMenu);
+
+    // ----- SETTINGS BUTTON -----
+    var btn = iframeDoc.createElement('button');
+    btn.id = 'uc-settings-btn';
+    btn.title = 'Unified Chat Settings';
+    // Link icon SVG
+    btn.innerHTML = '<svg fill="currentColor" width="24" height="24" viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"></path></svg>';
+    
+    btn.style.background = 'transparent';
+    btn.style.border = 'none';
+    btn.style.color = 'var(--yt-live-chat-header-button-color, #909090)';
+    btn.style.cursor = 'pointer';
+    btn.style.padding = '8px';
+    btn.style.display = 'flex';
+    btn.style.alignItems = 'center';
+    btn.style.justifyContent = 'center';
+    btn.style.marginRight = '8px';
+    
+    btn.onmouseover = function() { btn.style.color = 'var(--yt-spec-text-primary, #fff)'; };
+    btn.onmouseout = function() { btn.style.color = 'var(--yt-live-chat-header-button-color, #909090)'; };
+
+    btn.onclick = function() {
+      toggleSettingsOverlay(iframeDoc);
+    };
+    
+    container.insertBefore(btn, headerContextMenu);
+  }
+
+  function toggleSettingsOverlay(iframeDoc) {
+    var existing = iframeDoc.getElementById('uc-settings-overlay');
+    if (existing) {
+      existing.remove();
+      return;
+    }
+    
+    var overlay = iframeDoc.createElement('div');
+    overlay.id = 'uc-settings-overlay';
+    overlay.style.position = 'absolute';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    overlay.style.zIndex = '999999';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    
+    var iframe = iframeDoc.createElement('iframe');
+    
+    // Auto-fill youtube channel name by passing it in URL
+    var currentYt = getYouTubeChannelHandle() || '';
+    iframe.src = chrome.runtime.getURL('popup.html?yt=' + encodeURIComponent(currentYt));
+    
+    iframe.style.width = '340px';
+    iframe.style.height = '480px';
+    iframe.style.border = '1px solid rgba(255,255,255,0.2)';
+    iframe.style.borderRadius = '12px';
+    iframe.style.background = '#18181b';
+    iframe.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+    
+    // Close when clicking empty space
+    overlay.onclick = function(e) {
+      if (e.target === overlay) overlay.remove();
+    };
+    
+    var closeBtn = iframeDoc.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.position = 'absolute';
+    closeBtn.style.top = '10px';
+    closeBtn.style.right = '10px';
+    closeBtn.style.background = 'transparent';
+    closeBtn.style.border = 'none';
+    closeBtn.style.color = '#fff';
+    closeBtn.style.fontSize = '24px';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.onclick = function() { overlay.remove(); };
+    
+    overlay.appendChild(closeBtn);
+    overlay.appendChild(iframe);
+    iframeDoc.body.appendChild(overlay);
+  }
+
+  // ==========================================
   // APPEND MESSAGE → inject into YT #items
   // ==========================================
   function appendMessage(platform, authorName, contentHtml, authorColor) {
@@ -340,11 +494,6 @@
     var el = doc.createElement('div');
     el.className = 'uc-inj-msg platform-' + platform;
 
-    // Badge
-    var badge = doc.createElement('span');
-    badge.className = 'uc-inj-badge badge-' + platform;
-    badge.textContent = platform === 'twitch' ? 'Twitch' : 'Kick';
-
     // Author name
     var authorSpan = doc.createElement('span');
     authorSpan.className = 'uc-inj-author';
@@ -356,15 +505,19 @@
     textSpan.className = 'uc-inj-text';
     textSpan.innerHTML = contentHtml;
 
-    el.appendChild(badge);
     el.appendChild(authorSpan);
     el.appendChild(textSpan);
 
+    // Apply strict chronological order before appending
+    el.style.order = globalMessageCounter++;
+
     itemsContainer.appendChild(el);
 
-    // Trim messages (keep the list manageable — YT also does its own trimming)
-    while (itemsContainer.children.length > 200) {
-      itemsContainer.removeChild(itemsContainer.firstChild);
+    // Trim ONLY our injected messages to keep memory manageable
+    // (We must never delete native YT nodes or Polymer's array map will desync and crash)
+    var injectedMsgs = itemsContainer.querySelectorAll('.uc-inj-msg');
+    if (injectedMsgs.length > 200) {
+      injectedMsgs[0].remove();
     }
 
     // Only auto-scroll if user is near the bottom — never force-jump their position
@@ -381,50 +534,8 @@
         chatScroller.scrollTop = chatScroller.scrollHeight;
       }
     } catch (e) {
-      // Swallow — never fall back to scrollIntoView as it ignores user position
+      // Swallow
     }
-  }
-
-  // ==========================================
-  // STATUS BADGE (main page, outside iframe)
-  // ==========================================
-  function injectStatusBadge(chatFrame, twitchName, kickName) {
-    var existing = document.getElementById('uc-status-badge');
-    if (existing) existing.remove();
-
-    var badge = document.createElement('div');
-    badge.id = 'uc-status-badge';
-    badge.title = 'Unified Chat active';
-
-    if (twitchName) {
-      var t = document.createElement('span');
-      t.className = 'uc-sbadge uc-sbadge-twitch';
-      t.textContent = '● Twitch';
-      badge.appendChild(t);
-    }
-    if (kickName) {
-      var k = document.createElement('span');
-      k.className = 'uc-sbadge uc-sbadge-kick';
-      k.textContent = '● Kick';
-      badge.appendChild(k);
-    }
-
-    // Close button to disconnect
-    var closeBtn = document.createElement('button');
-    closeBtn.className = 'uc-sbadge-close';
-    closeBtn.title = 'Disconnect unified chat';
-    closeBtn.textContent = '✕';
-    closeBtn.addEventListener('click', function () {
-      teardown();
-    });
-    badge.appendChild(closeBtn);
-
-    // Remove any inline position we previously forced, as it breaks YT's Theater Mode layouts
-    if (chatFrame.style.position === 'relative') {
-      chatFrame.style.position = '';
-    }
-
-    chatFrame.appendChild(badge);
   }
 
   // ==========================================
@@ -648,6 +759,7 @@
         return '<img class="uc-emote" src="https://files.kick.com/emotes/' + id + '/fullsize" alt="' + name + '" title="' + name + '">';
       });
       rendered = replaceThirdPartyEmotes(rendered);
+      rendered = linkifyHtml(rendered);
 
       appendMessage('kick', authorName, rendered, color);
     } catch (err) {
@@ -781,6 +893,24 @@
     return parts.join('');
   }
 
+  function linkifyHtml(html) {
+    var parts = html.split(/(<[^>]+>)/);
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i].startsWith('<')) continue;
+      parts[i] = parts[i].replace(/(https?:\/\/[^\s]+)/gi, function(match) {
+        var trailing = '';
+        var url = match;
+        var lastChar = url.slice(-1);
+        if (['.', ',', '!', '?', ')', ']', '"', "'"].indexOf(lastChar) !== -1) {
+          trailing = lastChar;
+          url = url.slice(0, -1);
+        }
+        return '<a href="' + url.replace(/"/g, '%22') + '" target="_blank" rel="noopener noreferrer" class="uc-link">' + url + '</a>' + trailing;
+      });
+    }
+    return parts.join('');
+  }
+
   // ==========================================
   // TWITCH NATIVE EMOTE RENDERING
   // ==========================================
@@ -791,7 +921,7 @@
   }
 
   function renderTwitchEmotes(text, emotesTag) {
-    if (!emotesTag) return replaceThirdPartyEmotes(escapeHtml(text));
+    if (!emotesTag) return linkifyHtml(replaceThirdPartyEmotes(escapeHtml(text)));
 
     var replacements = [];
     var emoteGroups = emotesTag.split('/');
@@ -823,7 +953,7 @@
       cursor = r.end + 1;
     }
     if (cursor < text.length) html += escapeHtml(text.substring(cursor));
-    return replaceThirdPartyEmotes(html);
+    return linkifyHtml(replaceThirdPartyEmotes(html));
   }
 
   // ==========================================
@@ -833,6 +963,13 @@
 
   chrome.runtime.onMessage.addListener(function (msg) {
     if (msg.type === 'activate-unified-chat') {
+      teardown();
+      tryActivate();
+    }
+  });
+
+  window.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'activate-unified-chat') {
       teardown();
       tryActivate();
     }

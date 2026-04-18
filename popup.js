@@ -47,12 +47,19 @@ document.addEventListener('DOMContentLoaded', function () {
         showStatus('Link added: ' + label, 'success');
         loadLinks();
 
-        // Tell the active tab to activate immediately
-        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-          if (tabs[0] && tabs[0].url && tabs[0].url.includes('youtube.com')) {
-            chrome.tabs.sendMessage(tabs[0].id, { type: 'activate-unified-chat' }).catch(function() {});
-          }
-        });
+        // If running in an iframe inside the YT page
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: 'activate-unified-chat' }, '*');
+        }
+
+        // Tell the active tab to activate immediately (if running as a browser action popup)
+        if (chrome.tabs) {
+          chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+            if (tabs[0]) {
+              chrome.tabs.sendMessage(tabs[0].id, { type: 'activate-unified-chat' }).catch(function() {});
+            }
+          });
+        }
       });
     });
   });
@@ -156,6 +163,18 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function autoFillYouTubeChannel() {
+    // If embedded, read from URL param
+    var params = new URLSearchParams(window.location.search);
+    if (params.has('yt')) {
+      var ytName = params.get('yt');
+      ytInput.value = ytName;
+      ytInput.setAttribute('placeholder', ytName);
+      twitchInput.focus();
+      return;
+    }
+
+    if (!chrome.tabs) return;
+
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       if (!tabs[0] || !tabs[0].url || !tabs[0].url.includes('youtube.com/watch')) return;
 

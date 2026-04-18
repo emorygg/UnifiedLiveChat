@@ -31,5 +31,17 @@
       ],
       "run_at": "document_idle"
     }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "popup.html",
+        "popup.css",
+        "popup.js"
+      ],
+      "matches": [
+        "*://*.youtube.com/*"
+      ]
+    }
   ]
 }
