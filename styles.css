@@ -1,144 +1,58 @@
-/* Glassmorphism Unified Chat Styles */
+/* Unified Chat — Main Page Styles
+ * Only styles for elements injected into the main YouTube page (not the iframe).
+ * Injected message styles are applied directly to the iframe document via JS.
+ */
 
-#unified-chat-layer {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: #0f0f0f;
-  color: #fff;
-  font-family: "Inter", "Roboto", sans-serif;
-  overflow: hidden;
-  box-sizing: border-box;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-#uc-header {
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-}
-
-.uc-title {
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  background: linear-gradient(90deg, #ff0000, #9146FF);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-#uc-message-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  scroll-behavior: smooth;
-}
-
-/* Custom Scrollbar */
-#uc-message-list::-webkit-scrollbar {
-  width: 6px;
-}
-#uc-message-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-#uc-message-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-}
-#uc-message-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4);
-}
-
-/* Message Item */
-.uc-message {
-  display: flex;
-  flex-direction: column;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  padding: 10px 14px;
-  animation: fadeIn 0.3s ease-out forwards;
-  transition: transform 0.2s, background 0.2s;
-  will-change: transform;
-}
-
-.uc-message:hover {
-  background: rgba(255, 255, 255, 0.07);
-  transform: translateX(4px);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.uc-author-row {
+/* ── Status badge (sits inside ytd-live-chat-frame, outside the iframe) ── */
+#uc-status-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 9999;
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 4px;
-  font-size: 13px;
-  font-weight: bold;
+  background: rgba(15, 15, 15, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 4px 8px 4px 10px;
+  font-family: "Inter", "Roboto", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  pointer-events: all;
+  user-select: none;
 }
 
-.uc-text {
-  font-size: 14px;
-  line-height: 1.4;
-  color: #e0e0e0;
-  word-break: break-word;
+.uc-sbadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-/* Emote images (Twitch + YouTube) */
-.uc-emote,
-.uc-text img {
-  height: 1.5em;
-  width: auto;
-  vertical-align: middle;
-  margin: 0 2px;
+.uc-sbadge-twitch {
+  color: #9146FF;
 }
 
-/* Platform Specific Styles */
-.platform-yt {
-  border-left: 4px solid #ff0000;
-}
-.platform-yt .uc-author-name {
-  color: #ff9999;
+.uc-sbadge-kick {
+  color: #53FC18;
 }
 
-.platform-twitch {
-  border-left: 4px solid #9146FF;
-}
-.platform-twitch .uc-author-name {
-  color: #d1b8ff;
-}
-
-.platform-kick {
-  border-left: 4px solid #53FC18;
-}
-.platform-kick .uc-author-name {
-  color: #7dff5c;
-}
-
-.uc-close-btn {
+.uc-sbadge-close {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  font-size: 18px;
-  transition: color 0.2s;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 0 0 4px;
+  transition: color 0.15s;
+  font-family: inherit;
 }
-.uc-close-btn:hover {
-  color: white;
+
+.uc-sbadge-close:hover {
+  color: rgba(255, 255, 255, 0.9);
 }
