@@ -40,18 +40,16 @@
     var entry = links[ytChannel] || links[ytChannel.replace('@', '')];
     if (!entry) {
       console.log('[UnifiedChat] No link for channel: ' + ytChannel);
-      return;
     }
 
     // Handle legacy string format
-    if (typeof entry === 'string') entry = { twitch: entry };
+    if (entry && typeof entry === 'string') entry = { twitch: entry };
 
-    var twitchName = entry.twitch ? entry.twitch.trim().toLowerCase() : null;
-    var kickName   = entry.kick   ? entry.kick.trim().toLowerCase()   : null;
+    var twitchName = entry && entry.twitch ? entry.twitch.trim().toLowerCase() : null;
+    var kickName   = entry && entry.kick   ? entry.kick.trim().toLowerCase()   : null;
 
     if (!twitchName && !kickName) {
       console.log('[UnifiedChat] Entry has no channels configured.');
-      return;
     }
 
     // Find the live chat frame
@@ -359,8 +357,13 @@
     var headerContextMenu = iframeDoc.querySelector('#live-chat-header-context-menu');
     if (!headerContextMenu) return;
     
-    // Check if we already injected it
-    if (iframeDoc.getElementById('uc-settings-btn')) return;
+    // Check if we already injected it; if so, remove them to re-render fresh
+    var existingBtn = iframeDoc.getElementById('uc-settings-btn');
+    if (existingBtn) existingBtn.remove();
+    
+    var existingStatus = iframeDoc.getElementById('uc-header-status');
+    if (existingStatus) existingStatus.remove();
+
 
     var container = headerContextMenu.parentElement;
 
