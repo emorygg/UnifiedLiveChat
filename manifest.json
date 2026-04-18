@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Unified Live Chat",
-  "version": "0.1.0",
-  "description": "Automatically replaces YouTube live chat with a unified feed combining the live chats of multiple platforms.",
+  "version": "0.2.0",
+  "description": "Replaces YouTube live chat with a unified feed combining the live chats of multiple platforms.",
   "permissions": [
     "storage",
     "activeTab",
