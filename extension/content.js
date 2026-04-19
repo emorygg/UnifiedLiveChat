@@ -964,10 +964,12 @@
   // ==========================================
   document.addEventListener('yt-navigate-finish', onPageChange);
 
-  chrome.runtime.onMessage.addListener(function (msg) {
+  chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     if (msg.type === 'activate-unified-chat') {
       teardown();
       tryActivate();
+    } else if (msg.type === 'get-yt-channel') {
+      sendResponse(getYouTubeChannelHandle());
     }
   });
 

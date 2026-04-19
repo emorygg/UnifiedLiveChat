@@ -178,22 +178,11 @@ document.addEventListener('DOMContentLoaded', function () {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       if (!tabs[0] || !tabs[0].url || !tabs[0].url.includes('youtube.com/watch')) return;
 
-      chrome.scripting.executeScript({
-        target: { tabId: tabs[0].id },
-        func: function () {
-          var anchor = document.querySelector('ytd-video-owner-renderer a.yt-simple-endpoint');
-          if (anchor && anchor.href) {
-            var match = anchor.href.match(/youtube\.com\/@([^\/\?]+)/);
-            if (match) return match[1].toLowerCase();
-          }
-          var nameEl = document.querySelector('ytd-video-owner-renderer #channel-name yt-formatted-string');
-          if (nameEl) return nameEl.textContent.trim().toLowerCase();
-          return null;
-        }
-      }, function (results) {
-        if (results && results[0] && results[0].result) {
-          ytInput.value = results[0].result;
-          ytInput.setAttribute('placeholder', results[0].result);
+      chrome.tabs.sendMessage(tabs[0].id, { type: 'get-yt-channel' }, function (response) {
+        if (chrome.runtime.lastError) return;
+        if (response) {
+          ytInput.value = response;
+          ytInput.setAttribute('placeholder', response);
           twitchInput.focus();
         }
       });

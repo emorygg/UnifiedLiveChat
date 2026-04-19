@@ -4,9 +4,7 @@
   "version": "0.2.0",
   "description": "Replaces YouTube live chat with a unified feed combining the live chats of multiple platforms.",
   "permissions": [
-    "storage",
-    "activeTab",
-    "scripting"
+    "storage"
   ],
   "host_permissions": [
     "*://*.youtube.com/*"
